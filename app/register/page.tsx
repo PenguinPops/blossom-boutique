@@ -12,7 +12,7 @@ export default function Login() {
     let user = await getUser(email);
 
     if (user.length > 0) {
-      return 'User already exists'; // TODO: Handle errors with useFormStatus
+      return 'User already exists';
     } else {
       await createUser(email, password);
       redirect('/login');

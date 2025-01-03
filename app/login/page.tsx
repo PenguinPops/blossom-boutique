@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Form } from 'app/form';
 import { signIn } from 'app/auth';
 import { SubmitButton } from 'app/submit-button';
+import { NextResponse } from 'next/server';
+
 
 export default function Login() {
   return (
@@ -16,11 +18,18 @@ export default function Login() {
         <Form
           action={async (formData: FormData) => {
             'use server';
-            await signIn('credentials', {
-              redirectTo: '/protected',
-              email: formData.get('email') as string,
-              password: formData.get('password') as string,
-            });
+            try {
+              const result = await signIn('credentials', {
+                redirectTo: '/protected',
+                email: formData.get('email') as string,
+                password: formData.get('password') as string,
+              });
+              if (result) {
+                return NextResponse.redirect('/protected');
+              }
+            } catch (error) {
+              console.error('An unexpected error happened:', error);
+            };
           }}
         >
           <SubmitButton>Sign in</SubmitButton>
