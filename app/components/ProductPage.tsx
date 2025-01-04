@@ -48,7 +48,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ name, description, image, pri
           min="1"
           value={quantity}
           onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-          className="w-16 text-center text-lg border border-gray-300 rounded-lg"
+          className="w-16 text-center text-lg border border-gray-300 rounded-lg text-gray-700"
         />
       </div>
 
