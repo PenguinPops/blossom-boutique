@@ -19,7 +19,7 @@ async function getOrderDetails(orderId: number, username: string) {
   const userResult = await db
     .select({ userId: User.id })
     .from(User)
-    .where(eq(User.username, username));
+    .where(eq(User.name, username));
 
   if (userResult.length === 0) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });

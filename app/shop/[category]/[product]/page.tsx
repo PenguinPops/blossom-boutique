@@ -15,7 +15,7 @@ export default async function Product({ params }: { params: { category: string; 
     }
 
     const productData = products.find(
-      (prod) => prod.name.toLowerCase().replace(/ /g, '-') === product
+      (prod) => (prod.name && prod.name.toLowerCase().replace(/ /g, '-') === product)
     );
 
     if (!productData) {
@@ -24,15 +24,17 @@ export default async function Product({ params }: { params: { category: string; 
 
     // Wrap the ProductPage inside the Layout component
     return (
-      <Layout>
+        <Layout>
         <ProductPage
-          name={productData.name}
-          description={productData.description}
-          image={productData.image}
-          price={productData.price}
-          details={productData.details || []} // Assuming 'details' is available in the product data
+            id={productData.id || 0} // Provide a fallback for null
+            name={productData.name || "Unnamed Product"} // Provide a fallback for null
+            description={productData.description || "No description available."}
+            image={productData.image || "/images/default-product.jpg"} // Default image
+            price={productData.price ? `$${productData.price}` : "Price not available"} // Handle null price
+            // details={productData.details || []} // Default to an empty array
         />
-      </Layout>
+        </Layout>
+
     );
   } catch (error) {
     return <div>Error fetching product data: {error instanceof Error ? error.message : 'Unknown error'}</div>;

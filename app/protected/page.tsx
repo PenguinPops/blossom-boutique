@@ -1,3 +1,4 @@
+// /app/protected/page.tsx
 import { auth, signOut } from 'app/auth';
 
 export default async function ProtectedPage() {

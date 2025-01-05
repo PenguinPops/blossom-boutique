@@ -2,23 +2,42 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { getCartFromCookie, saveCartToCookie } from '@/app/utils/cartUtils';
+
 
 interface ProductPageProps {
+  id: number;
   name: string;
   description: string;
   image: string;
   price: string;
-  details: string[];
 }
 
-const ProductPage: React.FC<ProductPageProps> = ({ name, description, image, price, details }) => {
+const ProductPage: React.FC<ProductPageProps> = ({ id, name, description, image, price}) => {
   const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = () => {
+    const existingCart = getCartFromCookie();
+    const updatedCart = [...existingCart];
+  
+    // Check if the product already exists in the cart
+    const existingItemIndex = updatedCart.findIndex((item) => item.id === id);
+  
+    if (existingItemIndex !== -1) {
+      updatedCart[existingItemIndex].quantity += quantity;
+    } else {
+      updatedCart.push({
+        id, // Use product's unique ID here
+        name,
+        price: parseFloat(price.replace('$', '')),
+        quantity,
+        image,
+      });
+    }
+  
+    saveCartToCookie(updatedCart);
     alert(`Added ${quantity} ${name}(s) to your cart!`);
-    // Implement actual cart functionality here (e.g., context, API call, etc.)
   };
-
   return (
     <div className="max-w-4xl mx-auto p-5">
       <h1 className="text-3xl font-bold text-gray-800">{name}</h1>
@@ -33,11 +52,11 @@ const ProductPage: React.FC<ProductPageProps> = ({ name, description, image, pri
         />
       </div>
       <p className="mt-5 text-2xl text-teal-700">{price}</p>
-      <ul className="mt-3 text-gray-700 list-disc list-inside">
+      {/* <ul className="mt-3 text-gray-700 list-disc list-inside">
         {details.map((detail, index) => (
           <li key={index}>{detail}</li>
         ))}
-      </ul>
+      </ul> */}
 
       {/* Quantity Selector */}
       <div className="mt-5 flex items-center space-x-4">

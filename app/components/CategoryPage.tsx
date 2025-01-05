@@ -18,10 +18,10 @@ interface CategoryPageProps {
 }
 
 const CategoryPage: React.FC<CategoryPageProps> = ({
-  title,
-  description,
-  heroImage,
-  products,
+  title = "Untitled Category",
+  description = "No description available.",
+  heroImage = "/images/default-hero.jpg", // Use a default image
+  products = [],
 }) => {
   return (
     <Layout>

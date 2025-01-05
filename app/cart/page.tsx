@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
-import Layout from '@/app/components/Layout'; // Assuming Layout contains footer
+import React, { useState, useEffect } from 'react';
+import { getCartFromCookie, saveCartToCookie } from '@/app/utils/cartUtils';
+import Layout from '@/app/components/Layout';
+import Link from 'next/link';
 
 interface CartItem {
   id: string;
@@ -12,33 +14,25 @@ interface CartItem {
 }
 
 const CartPage: React.FC = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: '1',
-      name: 'Rose Bouquet',
-      price: 29.99,
-      quantity: 2,
-      image: '/images/roses.jpg',
-    },
-    {
-      id: '2',
-      name: 'Wedding Arrangement',
-      price: 59.99,
-      quantity: 1,
-      image: '/images/wedding.jpg',
-    },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    const savedCart = getCartFromCookie();
+    setCartItems(savedCart);
+  }, []);
 
   const handleQuantityChange = (id: string, newQuantity: number) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
+    const updatedCart = cartItems.map((item) =>
+      item.id === id ? { ...item, quantity: newQuantity } : item
     );
+    setCartItems(updatedCart);
+    saveCartToCookie(updatedCart);
   };
 
   const handleRemoveItem = (id: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    const updatedCart = cartItems.filter((item) => item.id !== id);
+    setCartItems(updatedCart);
+    saveCartToCookie(updatedCart);
   };
 
   const getTotalPrice = () =>
@@ -100,10 +94,11 @@ const CartPage: React.FC = () => {
                 Total: ${getTotalPrice().toFixed(2)}
               </p>
               <button
-                onClick={() => alert('Proceeding to checkout...')}
                 className="mt-3 px-6 py-3 bg-teal-700 text-white text-lg rounded-lg hover:bg-teal-800 transition"
               >
-                Checkout
+                <Link href="/cart/checkout">
+                  Checkout
+                </Link>
               </button>
             </div>
           </>

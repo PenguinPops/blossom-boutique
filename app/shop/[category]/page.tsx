@@ -1,4 +1,3 @@
-// app/shop/[category]/page.tsx
 import { getCategoryData } from '@/app/api/shop/[category]/route';
 import CategoryPage from '@/app/components/CategoryPage';
 
@@ -13,19 +12,26 @@ export default async function Category({ params }: { params: { category: string 
       return <div>Category not found</div>;
     }
 
-    // Pass the category data and products to CategoryPage component
+    // Map and filter products to ensure only valid Product objects are passed
+    const formattedProducts = products
+      .filter((prod) => prod.name) // Filter out products where name is null
+      .map((prod) => ({
+        id: prod.id,
+        name: prod.name!,
+        description: prod.description || '',
+        image: prod.image || '/images/default-product.jpg',
+        link: `/shop/${categoryData.slug}/${(prod.name || 'unknown-product')
+          .toLowerCase()
+          .replace(/ /g, '-')}`,
+      }));
+
+    // Pass the category data and formatted products to CategoryPage component
     return (
       <CategoryPage
-        title={categoryData.name}
-        description={categoryData.description}
-        heroImage={categoryData.image}
-        products={products.map((prod) => ({
-          id: prod.id,
-          name: prod.name,
-          description: prod.description,
-          image: prod.image,
-          link: `/shop/${categoryData.slug}/${prod.name.toLowerCase().replace(/ /g, '-')}`,
-        }))}
+        title={categoryData.name || 'Unnamed Category'}
+        description={categoryData.description || 'No description available.'}
+        heroImage={categoryData.image || '/images/default-hero.jpg'}
+        products={formattedProducts}
       />
     );
   } catch (error) {

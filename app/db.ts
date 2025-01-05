@@ -8,6 +8,30 @@ import { genSaltSync, hashSync } from 'bcrypt-ts';
 let client = postgres(`${process.env.POSTGRES_URL!}?sslmode=require`);
 let db = drizzle(client);
 
+export async function ensureOrderInfoTable() {
+  const result = await client`
+    SELECT EXISTS (
+    SELECT FROM information_schema.tables
+    WHERE table_schema = 'public'
+    AND table_name = 'OrderInfo'
+    );`;
+
+  const orderInfoTable = pgTable('OrderInfo', {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 40 }),
+    surname: varchar('surname', { length: 40 }),
+    postalcode: varchar('postalcode', { length: 6 }),
+    number: varchar('number', { length: 12 }),
+    address: varchar('address', { length: 255 }),
+    country: varchar('country', { length: 30 }),
+    voivodeship: varchar('voivodeship', { length: 30 }),
+    order_id: integer('orderid'),
+    user_id: integer('userid'),
+  });
+
+  return orderInfoTable;
+}
+
 // Define the ProductCategory table
 export async function ensureProductCategoryTable() {
   const result = await client`
@@ -36,6 +60,33 @@ export async function ensureProductCategoryTable() {
   });
 
   return productCategoryTable;
+}
+
+// Define the ProductDetail table
+export async function ensureProductDetailTable() {
+  const result = await client`
+    SELECT EXISTS (
+      SELECT FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name = 'ProductDetail'
+    );`;
+
+  if (!result[0].exists) {
+    await client`
+      CREATE TABLE "ProductDetail" (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER,
+        description TEXT
+      );`;
+  }
+
+  const productDetailTable = pgTable('ProductDetail', {
+    id: serial('id').primaryKey(),
+    product_id: integer('productid'),
+    detail: varchar('description', { length: 256 }),
+  });
+
+  return productDetailTable;
 }
 
 // Define the Product table
@@ -74,6 +125,8 @@ export async function ensureProductTable() {
 
   return productTable;
 }
+
+
 
 
 
@@ -137,15 +190,25 @@ export async function ensureOrderDetailTable() {
 // User management functions
 export async function getUser(email: string) {
   const users = await ensureTableExists();
-  return await db.select().from(users).where(eq(users.email, email));
+  const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+  if (user.length === 0) return null;
+
+  return user[0];  // Returning the full user object, including username
 }
 
-export async function createUser(email: string, password: string) {
+
+export async function createUser(email: string, password: string, username: string) {
   const users = await ensureTableExists();
   let salt = genSaltSync(10);
   let hash = hashSync(password, salt);
 
-  return await db.insert(users).values({ email, password: hash });
+  // Insert email, password, and username into the User table
+  return await db.insert(users).values({
+    email,
+    password: hash,
+    name: username,  // Store the username in the 'name' column
+  });
 }
 
 // Ensure the User table exists (as you already have it)
@@ -166,12 +229,27 @@ export async function ensureTableExists() {
       );`;
   }
 
+  
+
   const table = pgTable('User', {
     id: serial('id').primaryKey(),
     email: varchar('email', { length: 64 }),
     password: varchar('password', { length: 64 }),
-    username: varchar('username', { length: 40 }),
+    name: varchar('name', { length: 40 }),
   });
 
   return table;
+}
+
+// Update user details function
+export async function updateUserDetails(email: string, name: string, newEmail?: string) {
+  const users = await ensureTableExists();
+
+  // Perform the update query
+  const updatedUser = await db
+    .update(users)
+    .set({ name, email: newEmail || email })  // Update the name and optionally the email
+    .where(eq(users.email, email));
+
+  return updatedUser;
 }

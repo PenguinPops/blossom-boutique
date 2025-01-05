@@ -2,7 +2,7 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
-import { ensureProductCategoryTable, ensureProductTable} from '@/app/db'; // Import db and table functions
+import { ensureProductCategoryTable, ensureProductTable, ensureProductDetailTable} from '@/app/db'; // Import db and table functions
 
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
@@ -48,3 +48,17 @@ export async function getCategoryData(categorySlug: string) {
 
   return { category, products };
 }
+
+// Helper function to fetch product details
+// async function fetchProductDetails(productId: number) {
+//     const ProductDetail = await ensureProductDetailTable();
+  
+//     const details = await db
+//       .select()
+//       .from(ProductDetail)
+//       .where(eq(ProductDetail.product_id, productId))
+//       .execute();
+  
+//     return details.map(detail => detail.description);
+//   }
+  

@@ -3,6 +3,8 @@ import { ReactNode } from 'react';
 import { RiFlowerLine } from "react-icons/ri";
 import { FaShoppingCart, FaUser, FaStore } from 'react-icons/fa';
 
+import { useSession } from 'next-auth/react';
+
 const Navbar = () => {
   return (
     <nav className="flex justify-center space-x-6">

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import Layout from "@/app/components/Layout"; // Assuming Layout contains footer
+import React, { useEffect, useState } from "react";
+import Layout from "@/app/components/Layout";
 
 interface CartItem {
   id: string;
@@ -11,21 +11,7 @@ interface CartItem {
 }
 
 const CheckoutPage: React.FC = () => {
-  const [cartItems] = useState<CartItem[]>([
-    {
-      id: "1",
-      name: "Rose Bouquet",
-      price: 29.99,
-      quantity: 2,
-    },
-    {
-      id: "2",
-      name: "Wedding Arrangement",
-      price: 59.99,
-      quantity: 1,
-    },
-  ]);
-
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [userDetails, setUserDetails] = useState({
     name: "",
     surname: "",
@@ -36,7 +22,25 @@ const CheckoutPage: React.FC = () => {
     phoneNumber: "",
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Function to retrieve cart from cookie
+  useEffect(() => {
+    const cartCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("cart="));
+    if (cartCookie) {
+      try {
+        const parsedCart = JSON.parse(decodeURIComponent(cartCookie.split("=")[1]));
+        setCartItems(parsedCart);
+      } catch (error) {
+        console.error("Error parsing cart cookie:", error);
+        setCartItems([]);
+      }
+    }
+  }, []);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setUserDetails((prevDetails) => ({
       ...prevDetails,
@@ -44,16 +48,46 @@ const CheckoutPage: React.FC = () => {
     }));
   };
 
-  const handlePlaceOrder = () => {
-    const { name, surname, postalCode, address, country, voivodeship, phoneNumber } = userDetails;
+  const handlePlaceOrder = async () => {
+    const { name, surname, postalCode, address, country, voivodeship, phoneNumber } =
+      userDetails;
 
     if (!name || !surname || !postalCode || !address || !country || !voivodeship || !phoneNumber) {
       alert("Please fill out all fields before placing the order.");
       return;
     }
 
-    alert(`Order placed successfully!\nThank you, ${name} ${surname}.`);
-    // Implement actual order functionality here
+    try {
+      const response = await fetch("/api/cart/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userDetails: {
+            name,
+            surname,
+            postalCode,
+            address,
+            country,
+            voivodeship,
+            phoneNumber,
+          },
+          cartItems,
+          userId: 1, // Replace with actual user ID from authentication
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`Order placed successfully!\nThank you, ${name} ${surname}.`);
+        // Optionally reset form or redirect
+      } else {
+        alert(data.error || "Failed to place order");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("An error occurred while placing the order");
+    }
   };
 
   const getTotalPrice = () =>
@@ -68,7 +102,7 @@ const CheckoutPage: React.FC = () => {
         {/* User Details */}
         <div className="bg-gray-100 p-5 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Details</h2>
-          <form>
+          <form className="text-gray-800">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="block text-gray-700 font-medium">
@@ -176,17 +210,23 @@ const CheckoutPage: React.FC = () => {
         {/* Order Summary */}
         <div className="bg-white p-5 mt-5 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
-          <ul className="divide-y divide-gray-300">
-            {cartItems.map((item) => (
-              <li key={item.id} className="flex justify-between items-center py-3">
-                <span className="text-gray-800">{item.name} (x{item.quantity})</span>
-                <span className="text-gray-600">${(item.price * item.quantity).toFixed(2)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-right mt-4 text-xl font-bold text-gray-800">
-            Total: ${getTotalPrice().toFixed(2)}
-          </p>
+          {cartItems.length === 0 ? (
+            <p className="text-gray-600">Your cart is empty.</p>
+          ) : (
+            <>
+              <ul className="divide-y divide-gray-300">
+                {cartItems.map((item) => (
+                  <li key={item.id} className="flex justify-between items-center py-3">
+                    <span className="text-gray-800">{item.name} (x{item.quantity})</span>
+                    <span className="text-gray-600">${(item.price * item.quantity).toFixed(2)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-right mt-4 text-xl font-bold text-gray-800">
+                Total: ${getTotalPrice().toFixed(2)}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Place Order Button */}
