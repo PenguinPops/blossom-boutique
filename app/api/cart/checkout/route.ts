@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { ensureOrderInfoTable, ensureOrderTable, ensureOrderDetailTable } from '@/app/db';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq } from 'drizzle-orm';
+import { ensureTableExists } from '@/app/db';
 import postgres from 'postgres';
 
 const client = postgres(process.env.POSTGRES_URL!);
@@ -12,10 +14,29 @@ type CartItem = {
     price: number;
     quantity: number;
   };
+
+async function getUserDetails(username: string) {
+  const User = await ensureTableExists();
+  
+  // Fetch user details from the User table
+  const userDetails = await db
+    .select()
+    .from(User)
+    .where(eq(User.name, username));
+
+  if (userDetails.length === 0) {
+    return 0;
+  }
+
+  const userId = userDetails[0].id;
+
+  return userId;
+}
   
 
 export async function POST(req: Request) {
-    const { userDetails, cartItems, userId } = await req.json();
+    const { userDetails, cartItems, userName} = await req.json();
+    const userId = await getUserDetails(userName);
 
     if (!userDetails || !cartItems || !userId) {
         return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });

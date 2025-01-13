@@ -1,25 +1,46 @@
-// pages/api/user/data.ts
-import { NextApiRequest, NextApiResponse } from "next";
-import { getUser } from "app/db"; // Import your DB function
+import { NextResponse } from 'next/server';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { sql, eq } from 'drizzle-orm';
+import { ensureTableExists } from '@/app/db';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { email } = req.query;
+const client = postgres(process.env.POSTGRES_URL!);
+const db = drizzle(client);
 
-  if (!email || typeof email !== "string") {
-    return res.status(400).json({ error: "Invalid email" });
+// Function to fetch user data by email
+async function getUserData(email: string) {
+  const User = await ensureTableExists();
+
+  // Query to find the user by email
+  const userResult = await db
+    .select({
+      userId: User.id,
+      username: User.name,
+      userEmail: User.email,
+    })
+    .from(User)
+    .where(eq(User.email, email));
+
+  if (userResult.length === 0) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  // Get user data from the database
-  const user = await getUser(email);
+  return userResult[0]; // Return the first matching user
+}
 
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get('email');
+
+  if (!email) {
+    return NextResponse.json({ error: 'Email is required' }, { status: 400 });
   }
 
-  // Return user data including the username
-  return res.status(200).json({
-    username: user.name,
-    email: user.email,
-    id: user.id,
-  });
+  try {
+    const userData = await getUserData(email);
+    return NextResponse.json(userData);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
+  }
 }

@@ -1,10 +1,11 @@
 import './globals.css';
 
 import { GeistSans } from 'geist/font/sans';
+import { SessionProvider } from 'next-auth/react';
 
-let title = 'Next.js + Postgres Auth Starter';
+let title = 'Blossom Boutique';
 let description =
-  'This is a Next.js starter kit that uses NextAuth.js for simple email + password login and a Postgres database to persist the data.';
+  'Your one-stop shop for all things flowers.';
 
 export const metadata = {
   title,
@@ -14,7 +15,7 @@ export const metadata = {
     title,
     description,
   },
-  metadataBase: new URL('https://nextjs-postgres-auth.vercel.app'),
+  metadataBase: new URL('http://localhost:3000/'),
 };
 
 export default function RootLayout({
@@ -23,8 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    <SessionProvider>
     <html lang="en">
-      <body className={GeistSans.variable}>{children}</body>
+      <body className={GeistSans.variable}>
+        {children}
+      </body>
     </html>
+    </SessionProvider>
   );
 }

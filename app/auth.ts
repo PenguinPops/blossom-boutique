@@ -22,9 +22,10 @@ export const {
         if (passwordsMatch) {
           // Ensure the username exists
           const name = user.name || "Default Username"; // Default fallback if name is missing
+          const id = user.id.toString() || "0"; // Default fallback if id is missing
           return {
             ...user,
-            id: user.id.toString(),
+            id,
             name,  // Pass username to the session here
           };
         }

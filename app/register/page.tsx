@@ -8,17 +8,42 @@ import Layout from '@/app/components/Layout'; // Import the Layout component
 export default function Register() {
   async function register(formData: FormData) {
     'use server';
-    let email = formData.get('email') as string;
-    let password = formData.get('password') as string;
-    let username = formData.get('username') as string; // Getting the username
-    let user = await getUser(email);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const username = formData.get('username') as string;
 
-    if (user) {
-      return 'User already exists';
-    } else {
-      await createUser(email, password, username); // Pass the username to createUser
-      redirect('/login');
+    // Input Validation
+    if (!email || !password || !username) {
+      return 'All fields are required.';
     }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address.';
+    }
+
+    // Validate password length
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long.';
+    }
+
+    // Validate username length
+    if (username.length < 3) {
+      return 'Username must be at least 3 characters long.';
+    }
+
+    // Check if user already exists
+    const user = await getUser(email);
+    if (user) {
+      return 'User already exists.';
+    }
+
+    // Create the new user
+    await createUser(email, password, username);
+
+    // Redirect to login page
+    redirect('/login');
   }
 
   return (
