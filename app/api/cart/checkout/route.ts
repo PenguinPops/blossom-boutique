@@ -33,28 +33,116 @@ async function getUserDetails(username: string) {
   return userId;
 }
   
+let activeOrders = new Set();
 
 export async function POST(req: Request) {
-    const { userDetails, cartItems, userName} = await req.json();
-    const userId = await getUserDetails(userName);
+  try {
+    const { userDetails, cartItems, userName } = await req.json();
 
-    if (!userDetails || !cartItems || !userId) {
-        return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
+    if (activeOrders.has(userName)) {
+      return NextResponse.json({ error: 'Order already in progress.' }, { status: 429 });
     }
 
-    try {
-        const orderTable = await ensureOrderTable();
-        const orderDetailTable = await ensureOrderDetailTable();
-        const orderInfoTable = await ensureOrderInfoTable();
+    activeOrders.add(userName);
 
-        const total = cartItems.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
+    // Server-side validation
+    if (!userDetails || typeof userDetails !== 'object') {
+      return NextResponse.json({ error: 'Invalid user details' }, { status: 400 });
+    }
 
-        const [newOrder] = await db
-        .insert(orderTable)
-        .values({ user_id: userId, total })
-        .returning();
+    const requiredFields = [
+      'name',
+      'surname',
+      'postalCode',
+      'address',
+      'country',
+      'voivodeship',
+      'phoneNumber',
+    ];
 
-    // Add order details
+    const errors: Record<string, string> = {};
+
+    // Validate userDetails fields
+    requiredFields.forEach((field) => {
+      if (!userDetails[field]) {
+        errors[field] = `${field} is required.`;
+      }
+    });
+
+    if (!/^[A-ZŻŹĄĆÓŁŃŚ][a-ząłóżśźć]+(\s?-?[A-ZŻŹĄĆÓŁŃŚ][a-ząłóżśźć]+)*$/.test(userDetails.name)) {
+      errors.name = 'Invalid name format.';
+    }
+
+    if (!/^[A-ZŻŹĄĆÓŁŃŚ][a-ząłóżśźć]+(\s?-?[A-ZŻŹĄĆÓŁŃŚ][a-ząłóżśźć]+)*$/.test(userDetails.surname)) {
+      errors.surname = 'Invalid surname format.';
+    }
+
+    if (!/^[0-9]{2}-[0-9]{3}$/.test(userDetails.postalCode)) {
+      errors.postalCode = 'Invalid postal code format.';
+    }
+
+    if (!/^[A-Za-zÀ-ž0-9\s,]+$/.test(userDetails.address)) {
+      errors.address = 'Invalid address format.';
+    }
+
+    if (!/^[A-Za-zÀ-ž\s]+$/.test(userDetails.country)) {
+      errors.country = 'Invalid country format.';
+    }
+
+    if (!/^[A-Za-zÀ-ž]+$/.test(userDetails.voivodeship)) {
+      errors.voivodeship = 'Invalid voivodeship format.';
+    }
+
+    if (!/^(\+\d\d)?[0-9]{9}$/.test(userDetails.phoneNumber)) {
+      errors.phoneNumber = 'Invalid phone number format.';
+    }
+
+    // Validate cartItems
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      errors.cartItems = 'Cart items are required.';
+    } else {
+      cartItems.forEach((item, index) => {
+        if (
+          !item.id ||
+          typeof item.id !== 'number' ||
+          !item.name ||
+          typeof item.name !== 'string' ||
+          !item.price ||
+          typeof item.price !== 'number' ||
+          !item.quantity ||
+          typeof item.quantity !== 'number'
+        ) {
+          errors[`cartItem${index}`] = `Invalid cart item at index ${index}.`;
+        }
+      });
+    }
+
+    // Return errors if any
+    if (Object.keys(errors).length > 0) {
+      return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 });
+    }
+
+    // Ensure user exists in the database
+    const userId = await getUserDetails(userName);
+    if (!userId) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Business logic to insert into the database
+    const orderTable = await ensureOrderTable();
+    const orderDetailTable = await ensureOrderDetailTable();
+    const orderInfoTable = await ensureOrderInfoTable();
+
+    const total = cartItems.reduce(
+      (sum: number, item: CartItem) => sum + item.price * item.quantity,
+      0
+    );
+
+    const [newOrder] = await db
+      .insert(orderTable)
+      .values({ user_id: userId, total })
+      .returning();
+
     for (const item of cartItems) {
       await db.insert(orderDetailTable).values({
         order_id: newOrder.id,
@@ -63,7 +151,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // Add order info
     await db.insert(orderInfoTable).values({
       name: userDetails.name,
       surname: userDetails.surname,
@@ -76,8 +163,11 @@ export async function POST(req: Request) {
       user_id: userId,
     });
 
-    return NextResponse.json({ message: 'Order placed successfully!' });
+    activeOrders.delete(userName);
+    return NextResponse.json({ message: 'Order placed successfully!', orderId: newOrder.id });
   } catch (error) {
+    const { userName } = await req.json();
+    activeOrders.delete(userName);
     console.error(error);
     return NextResponse.json({ error: 'Failed to place order' }, { status: 500 });
   }
