@@ -26,20 +26,26 @@ export const {
           return {
             ...user,
             id,
-            name,  // Pass username to the session here
+            name,
           };
         }
         return null;
       },
     }),
   ],
+  // auth.ts - Update the callbacks section
   callbacks: {
-    async session({ session, user }) {
-      // Ensure that `username` is available in the session
-      if (user?.name && session.user) {
-        session.user.name = user.name;
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id; // Add user ID to the token
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub; // Add user ID to session
       }
       return session;
     },
-  },
+  }
 });

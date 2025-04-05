@@ -3,6 +3,7 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql, eq, and } from 'drizzle-orm';
 import { ensureProductTable, ensureOrderTable, ensureOrderDetailTable, ensureTableExists } from '@/app/db';
+import { auth } from '@/app/auth';
 
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
@@ -37,10 +38,10 @@ async function getOrderDetails(orderId: number, username: string) {
       quantity: OrderDetail.quantity,
       productName: Product.name,
       productPrice: Product.price,
-      productImage: Product.image,  // Include the product image
+      productImage: Product.image,
     })
     .from(Order)
-    .innerJoin(OrderDetail, sql`"OrderDetail".orderid = "Order".id`)  // Ensure correct column names
+    .innerJoin(OrderDetail, sql`"OrderDetail".orderid = "Order".id`)
     .innerJoin(Product, sql`"Product".id = "OrderDetail".productid`)
     .where(and(eq(Order.id, orderId), eq(Order.user_id, userId)));
 
@@ -55,6 +56,14 @@ async function getOrderDetails(orderId: number, username: string) {
 }
 
 export async function GET(req: Request, { params }: { params: { orderid: string, username: string } }) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if(session.user.name !== params.username) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   const { orderid, username } = params;
   const orderId = parseInt(orderid, 10);
 

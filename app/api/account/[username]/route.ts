@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import postgres from 'postgres';
 import { ensureTableExists, ensureOrderTable, ensureOrderDetailTable, ensureProductTable } from '@/app/db';
+import { auth } from '@/app/auth';
 
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
@@ -81,6 +82,15 @@ async function updateUserDetails(username: string, name: string, email: string) 
 
 // Handle GET and POST requests
 export async function GET(req: Request, { params }: { params: { username: string } }) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (session.user.name !== params.username) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const { username } = params;
 
   try {
@@ -93,6 +103,15 @@ export async function GET(req: Request, { params }: { params: { username: string
 }
 
 export async function POST(req: Request, { params }: { params: { username: string } }) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (session.user.name !== params.username) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  
   const { username } = params;
   const { name, email } = await req.json();  // Get name and email from the body of the request
 

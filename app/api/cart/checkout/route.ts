@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import { ensureTableExists } from '@/app/db';
 import postgres from 'postgres';
+import { auth } from '@/app/auth';
 
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
@@ -37,7 +38,12 @@ let activeOrders = new Set();
 
 export async function POST(req: Request) {
   try {
-    const { userDetails, cartItems, userName } = await req.json();
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userName = session.user.name;
+    const { userDetails, cartItems } = await req.json();
 
     if (activeOrders.has(userName)) {
       return NextResponse.json({ error: 'Order already in progress.' }, { status: 429 });
@@ -122,11 +128,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 });
     }
 
-    // Ensure user exists in the database
-    const userId = await getUserDetails(userName);
-    if (!userId) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    const userId = session.user.id;
 
     // Business logic to insert into the database
     const orderTable = await ensureOrderTable();
@@ -140,7 +142,7 @@ export async function POST(req: Request) {
 
     const [newOrder] = await db
       .insert(orderTable)
-      .values({ user_id: userId, total })
+      .values({ user_id: Number(userId), total })
       .returning();
 
     for (const item of cartItems) {
@@ -160,13 +162,19 @@ export async function POST(req: Request) {
       country: userDetails.country,
       voivodeship: userDetails.voivodeship,
       order_id: newOrder.id,
-      user_id: userId,
+      user_id: Number(userId),
     });
 
     activeOrders.delete(userName);
     return NextResponse.json({ message: 'Order placed successfully!', orderId: newOrder.id });
   } catch (error) {
-    const { userName } = await req.json();
+    
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userName = session.user.name;
+
     activeOrders.delete(userName);
     console.error(error);
     return NextResponse.json({ error: 'Failed to place order' }, { status: 500 });
