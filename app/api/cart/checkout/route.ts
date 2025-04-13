@@ -87,9 +87,9 @@ export async function POST(req: Request) {
       errors.postalCode = 'Invalid postal code format.';
     }
 
-    if (!/^[A-Za-zÀ-ž0-9\s,]+$/.test(userDetails.address)) {
-      errors.address = 'Invalid address format.';
-    }
+    // if (!/^[A-Za-zÀ-ž0-9\s,]+$/.test(userDetails.address)) {
+    //   errors.address = 'Invalid address format.';
+    // }
 
     if (!/^[A-Za-zÀ-ž\s]+$/.test(userDetails.country)) {
       errors.country = 'Invalid country format.';

@@ -59,9 +59,9 @@ const CheckoutPage: React.FC = () => {
       newErrors.postalCode = "Invalid postal code.";
     }
 
-    if (!/^[A-Za-zÀ-ž0-9\s,]+$/.test(userDetails.address)) {
-      newErrors.address = "Address is required.";
-    }
+    // if (!/^[A-Za-zÀ-ž0-9\s,]+$/.test(userDetails.address)) {
+    //   newErrors.address = "Address is required.";
+    // }
 
     if (!/^[A-Za-zÀ-ž\s]+$/.test(userDetails.country)) {
       newErrors.country = "Country is required.";
