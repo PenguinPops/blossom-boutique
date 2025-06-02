@@ -1,5 +1,5 @@
 // app/shop/[category]/[product]/page.tsx
-import { getCategoryData } from '@/app/api/shop/[category]/route';
+import { getCategoryData } from '@/app/utils/shopUtils';
 import ProductPage from '@/app/components/ProductPage';
 import Layout from '@/app/components/Layout';
 

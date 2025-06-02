@@ -1,4 +1,4 @@
-import { getCategoryData } from '@/app/api/shop/[category]/route';
+import { getCategoryData } from '@/app/utils/shopUtils';
 import CategoryPage from '@/app/components/CategoryPage';
 
 export default async function Category({ params }: { params: { category: string } }) {
