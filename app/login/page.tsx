@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { Form } from 'app/form';
 import { signIn } from 'app/auth';
 import { SubmitButton } from 'app/submit-button';
-import { NextResponse } from 'next/server';
-import Layout from '@/app/components/Layout'; // Import the Layout
+import Layout from '@/app/components/Layout';
+import { redirect } from 'next/navigation';
 
 export default function Login() {
   return (
@@ -26,18 +26,13 @@ export default function Login() {
                   password: formData.get('password') as string,
                 });
 
-                if (result && result.user) {
-                  const username = result.user.username; 
-                  if (username) {
-                    // Manually redirect to the account page
-                    window.location.href = `/account/${username}`;  // Manually navigate to the account page
-                  } else {
-                    // Handle case where username is not found
-                    window.location.href = '/login';  // Stay on login page if no username found
-                  }
+                if (result?.user?.username) {
+                  redirect(`/account/${result.user.username}`);
                 }
+                redirect('/login');
               } catch (error) {
-                console.error('An unexpected error happened:', error);
+                console.error('Login failed:', error);
+                redirect('/login?error=1');
               }
             }}
           >
@@ -47,7 +42,7 @@ export default function Login() {
               <Link href="/register" className="font-semibold text-gray-800">
                 Sign up
               </Link>
-              {' for free.'}
+              {' here.'}
             </p>
           </Form>
         </div>
