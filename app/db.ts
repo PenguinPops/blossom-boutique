@@ -6,6 +6,8 @@ import { genSaltSync, hashSync } from 'bcrypt-ts';
 
 // Initialize database connection
 let client = postgres(`${process.env.POSTGRES_URL!}?sslmode=require`);
+let connectionCount = 0;
+console.log(`Creating connection #${++connectionCount} at ${new Date()}`);
 export const db = drizzle(client);
 
 export async function ensureOrderInfoTable() {
