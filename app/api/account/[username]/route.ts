@@ -1,13 +1,10 @@
 // Backend: In the same route as your GET request
 import { NextResponse } from 'next/server';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
-import postgres from 'postgres';
 import { ensureTableExists, ensureOrderTable, ensureOrderDetailTable, ensureProductTable } from '@/app/db';
 import { auth } from '@/app/auth';
+import { db } from '@/app/db';
 
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
 
 // Function to fetch user details (existing)
 async function getUserDetails(username: string) {

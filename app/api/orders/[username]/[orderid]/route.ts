@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server';
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql, eq, and } from 'drizzle-orm';
 import { ensureProductTable, ensureOrderTable, ensureOrderDetailTable, ensureTableExists } from '@/app/db';
 import { auth } from '@/app/auth';
-
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+import { db } from '@/app/db';
 
 // Function to fetch order details by order ID
 async function getOrderDetails(orderId: number, username: string) {

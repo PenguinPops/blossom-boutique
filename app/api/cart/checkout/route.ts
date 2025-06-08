@@ -3,11 +3,8 @@ import { ensureOrderInfoTable, ensureOrderTable, ensureOrderDetailTable } from '
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import { ensureTableExists } from '@/app/db';
-import postgres from 'postgres';
 import { auth } from '@/app/auth';
-
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+import { db } from '@/app/db';
 
 type CartItem = {
     id: number; 

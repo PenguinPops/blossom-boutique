@@ -6,7 +6,7 @@ import { genSaltSync, hashSync } from 'bcrypt-ts';
 
 // Initialize database connection
 let client = postgres(`${process.env.POSTGRES_URL!}?sslmode=require`);
-let db = drizzle(client);
+export const db = drizzle(client);
 
 export async function ensureOrderInfoTable() {
   const result = await client`
@@ -229,7 +229,7 @@ export async function ensureTableExists() {
       );`;
   }
 
-  
+
 
   const table = pgTable('User', {
     id: serial('id').primaryKey(),

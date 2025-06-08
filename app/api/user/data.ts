@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { sql, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { ensureTableExists } from '@/app/db';
+import { db } from '@/app/db';
 
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
 
 // Function to fetch user data by email
 async function getUserData(email: string) {
