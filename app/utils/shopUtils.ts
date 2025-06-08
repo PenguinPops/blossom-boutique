@@ -1,11 +1,7 @@
 // app/lib/shop-utils.ts
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import { ensureProductCategoryTable, ensureProductTable } from '@/app/db';
-
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+import { db } from '@/app/db';
 
 // Helper function to fetch a category by slug
 async function fetchCategoryBySlug(categorySlug: string) {
